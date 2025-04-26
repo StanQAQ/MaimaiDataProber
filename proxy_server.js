@@ -43,5 +43,5 @@ app.post('/proxy/player/scores', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`✅ 代理服务器已启动: http://localhost:${PORT}`);
+    console.log(`代理服务器已启动: http://localhost:${PORT}`);
 });
