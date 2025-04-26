@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人 API 查询工具</title>
+</head>
+
+<body>
+    <h1>个人 API 查询工具</h1>
+
+    <h2>输入你的 X-User-Token</h2>
+    <input type="text" id="tokenInput" placeholder="请输入你的 API Token" style="width: 400px;">
+
+    <h2>查询功能</h2>
+    <button onclick="fetchPlayerData()">查询玩家基本信息</button>
+    <button onclick="fetchPlayerBest50ScoresData()">查询玩家前50首成绩</button>
+    <button onclick="fetchPlayerAllScoreData()">查询玩家成绩信息</button>
+
+    <h2>返回结果</h2>
+    <pre id="resultData"></pre>
+
+    <script>
+        async function fetchPlayerData() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                document.getElementById('resultData').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error("获取玩家数据失败:", error);
+                alert("获取玩家数据失败");
+            }
+        }
+
+        async function fetchPlayerBest50ScoresData() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player/scores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                const top50Scores = data.data.slice(0, 50);
+                const resultDiv = document.getElementById('resultData');
+                resultDiv.innerHTML = ''; // 清空之前的内容
+                if (data && Array.isArray(data.data)) {
+                    const top50Scores = data.data.slice(0, 50);
+                    top50Scores.forEach(score => {
+                        const container = document.createElement('div');
+                        container.style.marginBottom = '20px';
+
+                        const songId = score.id; // 获取 song_id
+                        const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                        const img = document.createElement('img');
+                        img.src = songImageUrl;
+                        img.alt = '曲绘';
+                        img.style.width = '200px'; // 你可以调整大小
+                        img.style.height = '200px';
+                        img.style.display = 'block';
+
+                        const scoreInfo = document.createElement('div');
+                        scoreInfo.textContent = 
+                        `名称: ${score.song_name}\n等级: ${score.level}\n分数: ${score.achievements}\n单曲rating: ${score.dx_rating}\n类型: ${score.type}`;                        
+
+                        container.appendChild(img);
+                        container.appendChild(scoreInfo);
+
+                        resultDiv.appendChild(container);
+                    });
+                } else {
+                    resultDiv.textContent = '未找到成绩数据或格式错误';
+                }
+            } catch (error) {
+                console.error("获取玩家前50首成绩失败:", error);
+                alert("获取玩家前50首成绩失败");
+            }
+        }
+
+        async function fetchPlayerAllScoreData() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player/scores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultData');
+                resultDiv.innerHTML = ''; // 清空之前的内容
+                const scores = data.data;
+                scores.forEach(score => {
+                        const container = document.createElement('div');
+                        container.style.marginBottom = '20px';
+
+                        const songId = score.id; // 获取 song_id
+                        const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                        const img = document.createElement('img');
+                        img.src = songImageUrl;
+                        img.alt = '曲绘';
+                        img.style.width = '200px'; // 你可以调整大小
+                        img.style.height = '200px';
+                        img.style.display = 'block';
+
+                        const scoreInfo = document.createElement('div');
+                        scoreInfo.textContent = 
+                        `名称: ${score.song_name}\n等级: ${score.level}\n分数: ${score.achievements}\n单曲rating: ${score.dx_rating}\n类型: ${score.type}`;                        
+
+                        container.appendChild(img);
+                        container.appendChild(scoreInfo);
+
+                        resultDiv.appendChild(container);
+                    });
+            } catch (error) {
+                console.error("获取玩家所有成绩失败:", error);
+                alert("获取玩家所有成绩失败");
+            }
+        }
+
+    </script>
+</body>
+
+</html>
