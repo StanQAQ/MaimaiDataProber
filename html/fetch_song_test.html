@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,11 +12,13 @@
             margin: 0 auto;
             padding: 20px;
         }
+
         input {
             padding: 8px;
             font-size: 16px;
             width: 200px;
         }
+
         button {
             padding: 8px 16px;
             font-size: 16px;
@@ -24,25 +27,29 @@
             border: none;
             cursor: pointer;
         }
+
         button:hover {
             background: #45a049;
         }
+
         #result {
             margin-top: 20px;
         }
+
         #jacket {
             max-width: 300px;
             border: 1px solid #ddd;
         }
     </style>
 </head>
+
 <body>
     <h1>歌曲查询</h1>
     <p>输入歌曲ID，加载对应的曲绘和音频：</p>
-    
+
     <input type="number" id="songIdInput" placeholder="输入歌曲ID" min="1">
     <button onclick="loadSong()">加载歌曲</button>
-    
+
     <div id="result">
         <h2 id="songTitle">歌曲ID: <span id="displayId">-</span></h2>
         <img id="jacket" src="" alt="曲绘" style="display: none;">
@@ -50,12 +57,15 @@
             您的浏览器不支持音频播放。
         </audio>
     </div>
+    <div id="songInfo" style="margin-top: 20px;">
+
+    </div> <!-- 新增：显示歌曲信息 -->
 
     <script>
         function loadSong() {
             // 获取用户输入的歌曲ID
             const songId = document.getElementById("songIdInput").value;
-            const actualId = songId % 10000; 
+            const actualId = songId % 10000;
             if (!songId) {
                 alert("请输入歌曲ID！");
                 return;
@@ -67,13 +77,14 @@
             // 构建曲绘和音频URL
             const jacketUrl = `https://assets2.lxns.net/maimai/jacket/${actualId}.png`;
             const audioUrl = `https://assets2.lxns.net/maimai/music/${actualId}.mp3`;
-            const version = 'https://maimai.lxns.net/api/v0/maimai/song/${actualId}';
+            const version = `https://maimai.lxns.net/api/v0/maimai/song/${actualId}`;
+            const songInfoUrl = `https://maimai.lxns.net/api/v0/maimai/song/${actualId}`; // 新增：歌曲信息API
 
             // 加载曲绘
             const jacketImg = document.getElementById("jacket");
             jacketImg.src = jacketUrl;
             jacketImg.style.display = "block";
-            jacketImg.onerror = function() {
+            jacketImg.onerror = function () {
                 jacketImg.style.display = "none";
                 alert("曲绘加载失败，请检查歌曲ID是否正确！");
             };
@@ -82,11 +93,41 @@
             const audioPlayer = document.getElementById("audioPlayer");
             audioPlayer.src = audioUrl;
             audioPlayer.style.display = "block";
-            audioPlayer.onerror = function() {
+            audioPlayer.onerror = function () {
                 audioPlayer.style.display = "none";
                 alert("音频加载失败，请检查歌曲ID是否正确！");
             };
+
+            // 加载详细信息
+            const songInfo = document.getElementById("songInfo");
+            songInfo.innerHTML = '<p>正在加载歌曲信息...</p>'; // 显示加载提示
+            fetch(songInfoUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('未找到该歌曲ID对应的信息');
+                    }
+                    return response.json();
+                }).then(data => {
+                    const songInfoHTML = `
+                  <h3>歌曲信息</h3>
+                  <p><strong>ID：</strong> ${data.id}</p>
+                  <p><strong>标题：</strong> ${data.title}</p>
+                  <p><strong>艺术家：</strong> ${data.artist}</p>
+                  <p><strong>分类：</strong> ${data.genre}</p>
+                  <p><strong>BPM：</strong> ${data.bpm}</p>
+                  <p><strong>所属区域：</strong> ${data.map ?? '无'}</p>
+                  <p><strong>首次出现版本：</strong> ${data.version}</p>
+                  <p><strong>版权信息：</strong> ${data.rights ?? '无'}</p>
+                  <p><strong>是否禁用：</strong> ${data.disabled ? '是' : '否'}</p>
+                `;
+                    songInfo.innerHTML = songInfoHTML;
+                })
+                .catch(error => {
+                    console.error('查询歌曲信息失败', error);
+                    songInfo.innerHTML = '<p style="color:red;">未找到该歌曲ID对应的信息</p>';
+                });
         }
     </script>
 </body>
+
 </html>
