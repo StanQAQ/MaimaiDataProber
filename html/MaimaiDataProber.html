@@ -125,7 +125,9 @@
                 const plateImg = plateId ? `<img src="https://assets2.lxns.net/maimai/plate/${plateId}.png" alt="姓名框" style="width:150px;">` : '';
 
                 const infoHTML = `
+    <p><strong>头像:</strong></p>
     <div style="display:flex;align-items:center;margin-bottom:10px;">${iconImg}</div>
+    <p><strong>头像框:</strong></p>
     <div style="display:flex;align-items:center;margin-bottom:10px;">${plateImg}</div>
     <p><strong>昵称:</strong> ${player.name}</p>
     <p><strong>DX Rating:</strong> ${player.rating}</p>
@@ -177,11 +179,12 @@
 
                         const scoreInfo = document.createElement('div');
                         scoreInfo.textContent =
-                            `名称: ${score.song_name}
-                            等级: ${score.level}
-                            分数: ${score.achievements}
-                            单曲rating: ${score.dx_rating}
-                            类型: ${score.type}`;
+                            `ID：${score.id}
+名称: ${score.song_name}
+等级: ${score.level}
+分数: ${score.achievements}
+单曲rating: ${score.dx_rating}
+类型: ${score.type}`;
 
                         container.appendChild(img);
                         container.appendChild(scoreInfo);
@@ -230,7 +233,8 @@
 
                     const scoreInfo = document.createElement('div');
                     scoreInfo.textContent =
-                        `名称: ${score.song_name}
+                        `ID：${score.id}
+名称: ${score.song_name}
 等级: ${score.level}
 分数: ${score.achievements}
 单曲rating: ${score.dx_rating}
