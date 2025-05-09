@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>舞萌 DX 查询工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        input {
+            padding: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+
+        img {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 模式选择界面 -->
+    <div id="modeSelector">
+        <h2>请选择查询模式</h2>
+        <button onclick="showMode('api')">API 查询</button>
+        <button onclick="showMode('song')">查询单曲</button>
+    </div>
+
+    <!-- API 查询功能区 -->
+    <div id="apiQuerySection" style="display: none;">
+        <button onclick="goHome()">返回主页</button>
+        <h1>个人 API 查询工具</h1>
+        <h2>输入你的 X-User-Token</h2>
+        <input type="text" id="tokenInput" placeholder="请输入你的 API Token" style="width: 400px;">
+
+        <h2>查询功能</h2>
+        <button onclick="fetchPlayerData()">查询玩家基本信息</button>
+        <button onclick="fetchPlayerBest50ScoresData()">查询玩家前50首成绩</button>
+        <button onclick="fetchPlayerAllScoreData()">查询玩家成绩信息</button>
+
+        <h2>返回结果</h2>
+        <pre id="resultData"></pre>
+    </div>
+
+    <!-- 单曲查询功能区 -->
+    <div id="songQuerySection" style="display: none;">
+        <button onclick="goHome()">返回主页</button>
+        <h1>单曲信息查询</h1>
+        <input type="number" id="songIdInput" placeholder="输入歌曲ID" min="1">
+        <button onclick="loadSong()">加载歌曲信息</button>
+
+        <div id="songResult" style="margin-top: 20px;">
+            <h3>歌曲ID: <span id="displayId">-</span></h3>
+            <img id="jacket" src="" alt="曲绘" style="display: none; max-width: 200px;">
+            <audio id="audioPlayer" controls style="margin-top: 10px; display: none;">
+                您的浏览器不支持音频播放。
+            </audio>
+            <div id="songInfo" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- 所有功能脚本 -->
+    <script>
+        function goHome() {
+            document.getElementById('modeSelector').style.display = 'block';
+            document.getElementById('apiQuerySection').style.display = 'none';
+            document.getElementById('songQuerySection').style.display = 'none';
+        }
+
+        function showMode(mode) {
+            document.getElementById('modeSelector').style.display = 'none';
+            document.getElementById('apiQuerySection').style.display = (mode === 'api') ? 'block' : 'none';
+            document.getElementById('songQuerySection').style.display = (mode === 'song') ? 'block' : 'none';
+        }
+
+        async function fetchPlayerData() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('resultData');
+                resultDiv.innerHTML = '';
+
+                const player = data.data;
+
+                const iconId = player.icon.id;
+                const plateId = player.name_plate.id;
+                const iconImg = iconId ? `<img src="https://assets2.lxns.net/maimai/icon/${iconId}.png" alt="头像" style="width:100px;margin-right:10px;">` : '';
+                const plateImg = plateId ? `<img src="https://assets2.lxns.net/maimai/plate/${plateId}.png" alt="姓名框" style="width:150px;">` : '';
+
+                const infoHTML = `
+    <div style="display:flex;align-items:center;margin-bottom:10px;">${iconImg}</div>
+    <div style="display:flex;align-items:center;margin-bottom:10px;">${plateImg}</div>
+    <p><strong>昵称:</strong> ${player.name}</p>
+    <p><strong>DX Rating:</strong> ${player.rating}</p>
+    <p><strong>好友码:</strong> ${player.friend_code}</p>
+    <p><strong>称号:</strong> ${player.trophy?.name ?? '无'}</p>
+    <p><strong>上传时间:</strong> ${player.upload_time}</p>
+`;
+
+                resultDiv.innerHTML = infoHTML;
+
+            } catch (error) {
+                console.error("获取玩家数据失败:", error);
+                alert("获取玩家数据失败");
+            }
+        }
+
+        async function fetchPlayerBest50ScoresData() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultData');
+                resultDiv.innerHTML = '';
+
+                if (data && Array.isArray(data.data)) {
+                    const top50Scores = data.data.slice(0, 50);
+                    top50Scores.forEach(score => {
+                        const container = document.createElement('div');
+                        container.style.marginBottom = '20px';
+
+                        const songId = score.id;
+                        const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                        const img = document.createElement('img');
+                        img.src = songImageUrl;
+                        img.alt = '曲绘';
+                        img.style.width = '200px';
+                        img.style.height = '200px';
+                        img.style.display = 'block';
+
+                        const scoreInfo = document.createElement('div');
+                        scoreInfo.textContent =
+                            `名称: ${score.song_name}
+                            等级: ${score.level}
+                            分数: ${score.achievements}
+                            单曲rating: ${score.dx_rating}
+                            类型: ${score.type}`;
+
+                        container.appendChild(img);
+                        container.appendChild(scoreInfo);
+                        resultDiv.appendChild(container);
+                    });
+                } else {
+                    resultDiv.textContent = '未找到成绩数据或格式错误';
+                }
+            } catch (error) {
+                console.error("获取玩家前50首成绩失败:", error);
+                alert("获取玩家前50首成绩失败");
+            }
+        }
+
+        async function fetchPlayerAllScoreData() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultData');
+                resultDiv.innerHTML = '';
+                const scores = data.data;
+
+                scores.forEach(score => {
+                    const container = document.createElement('div');
+                    container.style.marginBottom = '20px';
+
+                    const songId = score.id;
+                    const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                    const img = document.createElement('img');
+                    img.src = songImageUrl;
+                    img.alt = '曲绘';
+                    img.style.width = '200px';
+                    img.style.height = '200px';
+                    img.style.display = 'block';
+
+                    const scoreInfo = document.createElement('div');
+                    scoreInfo.textContent =
+                        `名称: ${score.song_name}
+等级: ${score.level}
+分数: ${score.achievements}
+单曲rating: ${score.dx_rating}
+类型: ${score.type}`;
+
+                    container.appendChild(img);
+                    container.appendChild(scoreInfo);
+                    resultDiv.appendChild(container);
+                });
+            } catch (error) {
+                console.error("获取玩家所有成绩失败:", error);
+                alert("获取玩家所有成绩失败");
+            }
+        }
+
+        function loadSong() {
+            // 获取用户输入的歌曲ID
+            const songId = document.getElementById("songIdInput").value;
+            const actualId = songId % 10000;
+            if (!songId) {
+                alert("请输入歌曲ID！");
+                return;
+            }
+
+            // 更新显示的歌曲ID
+            document.getElementById("displayId").textContent = songId;
+
+            // 构建曲绘和音频URL
+            const jacketUrl = `https://assets2.lxns.net/maimai/jacket/${actualId}.png`;
+            const audioUrl = `https://assets2.lxns.net/maimai/music/${actualId}.mp3`;
+            const version = `https://maimai.lxns.net/api/v0/maimai/song/${actualId}`;
+            const songInfoUrl = `http://localhost:3000/proxy/song/${actualId}`; // 新增：歌曲信息API
+
+            // 加载曲绘
+            const jacketImg = document.getElementById("jacket");
+            jacketImg.src = jacketUrl;
+            jacketImg.style.display = "block";
+            jacketImg.onerror = function () {
+                jacketImg.style.display = "none";
+                alert("曲绘加载失败，请检查歌曲ID是否正确！");
+            };
+
+            // 加载音频
+            const audioPlayer = document.getElementById("audioPlayer");
+            audioPlayer.src = audioUrl;
+            audioPlayer.style.display = "block";
+            audioPlayer.onerror = function () {
+                audioPlayer.style.display = "none";
+                alert("音频加载失败，请检查歌曲ID是否正确！");
+            };
+
+            // 加载详细信息
+            const songInfo = document.getElementById("songInfo");
+            songInfo.innerHTML = '<p>正在加载歌曲信息...</p>'; // 显示加载提示
+            fetch(songInfoUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('未找到该歌曲ID对应的信息');
+                    }
+                    return response.json();
+                }).then(data => {
+                    const songInfoHTML = `
+                  <h3>歌曲信息</h3>
+                  <p><strong>标题：</strong> ${data.title}</p>
+                  <p><strong>艺术家：</strong> ${data.artist}</p>
+                  <p><strong>分类：</strong> ${data.genre}</p>
+                  <p><strong>BPM：</strong> ${data.bpm}</p>
+                  <p><strong>所属区域：</strong> ${data.map ?? '无'}</p>
+                  <p><strong>首次出现版本：</strong> ${data.version}</p>
+                  <p><strong>版权信息：</strong> ${data.rights ?? '无'}</p>
+                  <p><strong>是否禁用：</strong> ${data.disabled ? '是' : '否'}</p>
+                `;
+                    songInfo.innerHTML = songInfoHTML;
+                })
+                .catch(error => {
+                    console.error('查询歌曲信息失败', error);
+                    songInfo.innerHTML = '<p style="color:red;">未找到该歌曲ID对应的信息</p>';
+                });
+        }
+    </script>
+</body>
+
+</html>

@@ -42,6 +42,20 @@ app.post('/proxy/player/scores', async (req, res) => {
     }
 });
 
+// 代理歌曲信息（按 song_id）
+app.get('/proxy/song/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const response = await fetch(`https://maimai.lxns.net/api/v0/maimai/song/${id}`);
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error("歌曲信息代理失败:", error);
+        res.status(500).json({ error: '代理服务器出错', message: error.message });
+    }
+});
+
+
 app.listen(PORT, () => {
     console.log(`代理服务器已启动: http://localhost:${PORT}`);
 });
