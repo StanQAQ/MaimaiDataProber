@@ -41,15 +41,31 @@
         img {
             margin-top: 10px;
         }
+
+        #TopLeftImage {
+            top: 0;
+            left: 0;
+            width: 150px !important;
+            /* 你想要的宽度 */
+            height: auto !important;
+            /* 高度自动，保持比例 */
+            margin: 0;
+            z-index: 9999;
+        }
     </style>
+
+    <!-- <link rel="stylesheet" href="../css/style.css"> -->
+
 </head>
 
 <body>
+    <img id="TopLeftImage" src="../issue/maimai_DX_2024.png" alt="左上角图片" />
     <!-- 模式选择界面 -->
     <div id="modeSelector">
         <h2>请选择查询模式</h2>
-        <button onclick="showMode('api')">API 查询</button>
-        <button onclick="showMode('song')">查询单曲</button>
+        <button type="button" onclick="showMode('api')">API 查询</button>
+        <button type="button" onclick="showMode('song')">查询单曲</button>
+
     </div>
 
     <!-- API 查询功能区 -->
@@ -61,11 +77,30 @@
 
         <h2>查询功能</h2>
         <button onclick="fetchPlayerData()">查询玩家基本信息</button>
-        <button onclick="fetchPlayerBest50ScoresData()">查询玩家前50首成绩</button>
-        <button onclick="fetchPlayerAllScoreData()">查询玩家成绩信息</button>
+        <button onclick="fetchPlayerB50Data()">查询玩家b50成绩</button>
+        <button onclick="fetchPlayerAllScoreData()">查询玩家所有成绩</button>
+
 
         <h2>返回结果</h2>
         <pre id="resultData"></pre>
+
+        <div id="paginationContainer" style="display: none; margin-top: 20px;">
+            <div id="paginationButtons"></div>
+            <label for="pageSizeSelect">每页显示条数：</label>
+            <select id="pageSizeSelect">
+                <option value="10">10 条</option>
+                <option value="20">20 条</option>
+                <option value="50">50 条</option>
+            </select>
+        </div>
+
+
+    </div>
+
+    <!-- 加载进度条 -->
+    <div id="progressBarContainer"
+        style="width: 100%; background: #eee; height: 20px; margin-bottom: 20px; display: none;">
+        <div id="progressBar" style="width: 0%; height: 100%; background: #4CAF50;"></div>
     </div>
 
     <!-- 单曲查询功能区 -->
@@ -87,19 +122,31 @@
 
     <!-- 所有功能脚本 -->
     <script>
+        let isCancelled = false;
+
         function goHome() {
             document.getElementById('modeSelector').style.display = 'block';
             document.getElementById('apiQuerySection').style.display = 'none';
             document.getElementById('songQuerySection').style.display = 'none';
+            document.getElementById('paginationButtons').style.display = 'none';
+            document.getElementById('progressBarContainer').style.display = 'none';
         }
 
         function showMode(mode) {
             document.getElementById('modeSelector').style.display = 'none';
             document.getElementById('apiQuerySection').style.display = (mode === 'api') ? 'block' : 'none';
             document.getElementById('songQuerySection').style.display = (mode === 'song') ? 'block' : 'none';
+            document.getElementById('paginationButtons').style.display = 'none';
+            document.getElementById('progressBarContainer').style.display = 'none';
         }
 
+        // <--查询个人数据-->
         async function fetchPlayerData() {
+            isCancelled = true;
+            document.getElementById('resultData').innerHTML = '';
+            document.getElementById('progressBarContainer').style.display = 'none';
+            document.getElementById('paginationContainer').style.display = 'none';
+
             const token = document.getElementById('tokenInput').value.trim();
             if (!token) {
                 alert('请先输入你的 API Token');
@@ -128,12 +175,10 @@
     <p><strong>头像:</strong></p>
     <div style="display:flex;align-items:center;margin-bottom:10px;">${iconImg}</div>
     <p><strong>头像框:</strong></p>
-    <div style="display:flex;align-items:center;margin-bottom:10px;">${plateImg}</div>
+    <div style="display:flex;align-items:center;margin-bottom:20px;">${plateImg}</div>
     <p><strong>昵称:</strong> ${player.name}</p>
     <p><strong>DX Rating:</strong> ${player.rating}</p>
-    <p><strong>好友码:</strong> ${player.friend_code}</p>
     <p><strong>称号:</strong> ${player.trophy?.name ?? '无'}</p>
-    <p><strong>上传时间:</strong> ${player.upload_time}</p>
 `;
 
                 resultDiv.innerHTML = infoHTML;
@@ -144,67 +189,24 @@
             }
         }
 
-        async function fetchPlayerBest50ScoresData() {
-            const token = document.getElementById('tokenInput').value.trim();
-            if (!token) {
-                alert('请先输入你的 API Token');
-                return;
-            }
-
-            try {
-                const response = await fetch('http://localhost:3000/proxy/player/scores', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                });
-                const data = await response.json();
-                const resultDiv = document.getElementById('resultData');
-                resultDiv.innerHTML = '';
-
-                if (data && Array.isArray(data.data)) {
-                    const top50Scores = data.data.slice(0, 50);
-                    top50Scores.forEach(score => {
-                        const container = document.createElement('div');
-                        container.style.marginBottom = '20px';
-
-                        const songId = score.id;
-                        const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
-
-                        const img = document.createElement('img');
-                        img.src = songImageUrl;
-                        img.alt = '曲绘';
-                        img.style.width = '200px';
-                        img.style.height = '200px';
-                        img.style.display = 'block';
-
-                        const scoreInfo = document.createElement('div');
-                        scoreInfo.textContent =
-                            `ID：${score.id}
-名称: ${score.song_name}
-等级: ${score.level}
-分数: ${score.achievements}
-单曲rating: ${score.dx_rating}
-类型: ${score.type}`;
-
-                        container.appendChild(img);
-                        container.appendChild(scoreInfo);
-                        resultDiv.appendChild(container);
-                    });
-                } else {
-                    resultDiv.textContent = '未找到成绩数据或格式错误';
-                }
-            } catch (error) {
-                console.error("获取玩家前50首成绩失败:", error);
-                alert("获取玩家前50首成绩失败");
-            }
-        }
+        // <--查询所有成绩-->
+        let scores = [];         // 全部数据
+        let currentPage = 1;     // 当前页
 
         async function fetchPlayerAllScoreData() {
+            isCancelled = true;
+            document.getElementById('paginationContainer').style.display = 'block';
+            const paginationDiv = document.getElementById('paginationButtons');
+            paginationDiv.style.display = 'block';  // 显示分页控件
+            document.getElementById('progressBarContainer').style.display = 'none';
+
             const token = document.getElementById('tokenInput').value.trim();
             if (!token) {
                 alert('请先输入你的 API Token');
                 return;
             }
+
+
 
             try {
                 const response = await fetch('http://localhost:3000/proxy/player/scores', {
@@ -213,43 +215,354 @@
                     body: JSON.stringify({ token })
                 });
                 const data = await response.json();
-                const resultDiv = document.getElementById('resultData');
-                resultDiv.innerHTML = '';
-                const scores = data.data;
-
-                scores.forEach(score => {
-                    const container = document.createElement('div');
-                    container.style.marginBottom = '20px';
-
-                    const songId = score.id;
-                    const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
-
-                    const img = document.createElement('img');
-                    img.src = songImageUrl;
-                    img.alt = '曲绘';
-                    img.style.width = '200px';
-                    img.style.height = '200px';
-                    img.style.display = 'block';
-
-                    const scoreInfo = document.createElement('div');
-                    scoreInfo.textContent =
-                        `ID：${score.id}
-名称: ${score.song_name}
-等级: ${score.level}
-分数: ${score.achievements}
-单曲rating: ${score.dx_rating}
-类型: ${score.type}`;
-
-                    container.appendChild(img);
-                    container.appendChild(scoreInfo);
-                    resultDiv.appendChild(container);
-                });
+                scores = data.data || [];
+                currentPage = 1;
+                renderPage(currentPage);
             } catch (error) {
                 console.error("获取玩家所有成绩失败:", error);
                 alert("获取玩家所有成绩失败");
             }
         }
 
+        // 渲染指定页数据
+        function renderPage(page) {
+            const resultDiv = document.getElementById('resultData');
+            resultDiv.innerHTML = '';
+
+            const pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            const start = (page - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = scores.slice(start, end);
+
+            pageData.forEach(score => {
+                const container = document.createElement('div');
+                container.style.marginBottom = '20px';
+
+                const songId = score.id;
+                const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                const img = document.createElement('img');
+                img.src = songImageUrl;
+                img.alt = '曲绘';
+                img.style.width = '200px';
+                img.style.height = '200px';
+                img.style.display = 'block';
+                
+                const levelMap = {
+                    0: 'EASY',
+                    1: 'ADVANCED',
+                    2: 'EXPERT',
+                    3: 'MASTER',
+                    4: 'RE:MASTER'
+                };
+                const difficulty = levelMap[score.level_index] || '未知难度';
+                const dxRating = Math.floor(score.dx_rating);
+                const scoreInfo = document.createElement('div');
+                scoreInfo.textContent =
+                    `
+ID：${score.id}
+名称: ${score.song_name}
+难度：${difficulty}
+等级: ${score.level}
+分数: ${score.achievements}
+单曲分数: ${dxRating}
+类型: ${score.type}
+`;
+
+                container.appendChild(img);
+                container.appendChild(scoreInfo);
+                resultDiv.appendChild(container);
+            });
+
+            renderPagination();
+        }
+
+        // 渲染分页按钮
+        function renderPagination() {
+            const paginationDiv = document.getElementById('paginationButtons');
+            paginationDiv.innerHTML = '';
+
+            const pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            const totalPages = Math.ceil(scores.length / pageSize);
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '上一页';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPage(currentPage);
+                }
+            };
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '下一页';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage(currentPage);
+                }
+            };
+
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` 第 ${currentPage} / ${totalPages} 页 `;
+            pageInfo.style.margin = '0 10px';
+
+            paginationDiv.appendChild(prevButton);
+            paginationDiv.appendChild(pageInfo);
+            paginationDiv.appendChild(nextButton);
+        }
+
+        document.getElementById('pageSizeSelect').addEventListener('change', () => {
+            fetchPlayerAllScoreData(1); // 每页条数改变时重新加载第 1 页
+        });
+
+        // <--查询b50成绩-->
+        async function fetchPlayerB50Data() {
+            isCancelled = false;
+            document.getElementById('resultData').innerHTML = '';
+            document.getElementById('paginationContainer').style.display = 'none';
+            document.getElementById('progressBarContainer').style.display = 'none';
+
+            const progressBar = document.getElementById("progressBar");
+            const progressContainer = document.getElementById("progressBarContainer");
+            progressBar.style.width = '0%';
+            progressContainer.style.display = 'block';
+
+
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('请先输入你的 API Token');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/proxy/player/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                const resultDiv = document.getElementById('resultData');
+                resultDiv.innerHTML = '';
+
+                const tempFragment = document.createDocumentFragment(); // 临时容器
+
+                const scores = data.data;
+                let b15 = 0;
+                let b35 = 0;
+                let rating = 0;
+                let progress = 0;
+                // 获取b15
+                const b15Title = document.createElement('h2');
+                b15Title.textContent = 'B15';
+                b15Title.style.margin = '20px 0';
+                b15Title.style.fontSize = '32px';
+                b15Title.style.color = '#333';
+                b15Title.style.fontWeight = 'bold';
+                b15Title.style.fontFamily = 'Arial, sans-serif';
+                tempFragment.appendChild(b15Title);
+
+                for (const score of scores) {
+                    if (isCancelled) return;
+                    const container = document.createElement('div');
+                    container.style.marginBottom = '20px';
+
+                    const songId = score.id;
+                    const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                    let version;
+                    const maxRetries = 3;
+                    const retryDelay = 100;
+
+                    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                        try {
+                            const songResponse = await fetch(`http://localhost:3000/proxy/song/${songId}`);
+                            if (songResponse.ok) {
+                                const songData = await songResponse.json();
+                                if (songData.version !== undefined) {
+                                    version = songData.version;
+                                    break; // 获取成功，跳出循环
+                                } else {
+                                    console.warn(`歌曲 ${songId} 的 version 字段是 undefined（第 ${attempt} 次尝试）`);
+                                }
+                            } else {
+                                console.warn(`无法获取歌曲 ${songId} 信息，状态码: ${songResponse.status}（第 ${attempt} 次尝试）`);
+                            }
+                        } catch (e) {
+                            console.error(`获取歌曲 ${songId} 信息失败（第 ${attempt} 次尝试）:`, e);
+                        }
+
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        }
+                    }
+
+
+                    if (version < 24000) {
+                        continue;
+                    }
+                    else {
+                        if (b15 >= 15) {
+                            break;
+                        }
+                        else {
+                            const img = document.createElement('img');
+                            img.src = songImageUrl;
+                            img.alt = '曲绘';
+                            img.style.width = '200px';
+                            img.style.height = '200px';
+                            img.style.display = 'block';
+
+                            const levelMap = {
+                                0: 'EASY',
+                                1: 'ADVANCED',
+                                2: 'EXPERT',
+                                3: 'MASTER',
+                                4: 'RE:MASTER'
+                            };
+                            const difficulty = levelMap[score.level_index] || '未知难度';
+                            const dxRating = Math.floor(score.dx_rating);
+                            const scoreInfo = document.createElement('div');
+                            scoreInfo.textContent =
+                                `
+ID：${score.id}
+名称: ${score.song_name}
+难度：${difficulty}
+等级: ${score.level}
+分数: ${score.achievements}
+单曲分数: ${dxRating}
+类型: ${score.type}
+`;
+
+                            container.appendChild(img);
+                            container.appendChild(scoreInfo);
+                            //resultDiv.appendChild(container);
+                            b15 += 1;
+                            progress += 2;
+                            rating += dxRating;
+                            progressBar.style.width = `${progress}%`;
+
+                            tempFragment.appendChild(container); // ⬅ 加入临时片段
+                        }
+                    }
+
+                };
+
+                //获取b35
+                const b35Title = document.createElement('h2');
+                b35Title.textContent = 'B35';
+                b35Title.style.margin = '20px 0';
+                b35Title.style.fontSize = '32px';
+                b35Title.style.color = '#333';
+                b35Title.style.fontWeight = 'bold';
+                b35Title.style.fontFamily = 'Arial, sans-serif';
+                tempFragment.appendChild(b35Title);
+
+                for (const score of scores) {
+                    if (isCancelled) return;
+                    const container = document.createElement('div');
+                    container.style.marginBottom = '20px';
+
+                    const songId = score.id;
+                    const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                    let version;
+                    const maxRetries = 3;
+                    const retryDelay = 100;
+
+                    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                        try {
+                            const songResponse = await fetch(`http://localhost:3000/proxy/song/${songId}`);
+                            if (songResponse.ok) {
+                                const songData = await songResponse.json();
+                                if (songData.version !== undefined) {
+                                    version = songData.version;
+                                    break; // 获取成功，跳出循环
+                                } else {
+                                    console.warn(`歌曲 ${songId} 的 version 字段是 undefined（第 ${attempt} 次尝试）`);
+                                }
+                            } else {
+                                console.warn(`无法获取歌曲 ${songId} 信息，状态码: ${songResponse.status}（第 ${attempt} 次尝试）`);
+                            }
+                        } catch (e) {
+                            console.error(`获取歌曲 ${songId} 信息失败（第 ${attempt} 次尝试）:`, e);
+                        }
+
+                        if (attempt < maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        }
+                    }
+
+
+                    if (version >= 24000) {
+                        continue;
+                    }
+                    else {
+                        if (b35 >= 35) {
+                            break;
+                        }
+                        else {
+                            const container = document.createElement('div');
+                            container.style.marginBottom = '20px';
+
+                            const songId = score.id;
+                            const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+
+                            const img = document.createElement('img');
+                            img.src = songImageUrl;
+                            img.alt = '曲绘';
+                            img.style.width = '200px';
+                            img.style.height = '200px';
+                            img.style.display = 'block';
+
+                            const levelMap = {
+                                0: 'EASY',
+                                1: 'ADVANCED',
+                                2: 'EXPERT',
+                                3: 'MASTER',
+                                4: 'RE:MASTER'
+                            };
+                            const difficulty = levelMap[score.level_index] || '未知难度';
+                            const dxRating = Math.floor(score.dx_rating);
+                            const scoreInfo = document.createElement('div');
+                            scoreInfo.textContent =
+                                `
+ID：${score.id}
+名称: ${score.song_name}
+难度：${difficulty}
+等级: ${score.level}
+分数: ${score.achievements}
+单曲分数: ${dxRating}
+类型: ${score.type}
+`;
+
+                            container.appendChild(img);
+                            container.appendChild(scoreInfo);
+                            //resultDiv.appendChild(container);
+                            b35 += 1;
+                            progress += 2;
+                            rating += dxRating;
+                            progressBar.style.width = `${progress}%`;
+
+                            tempFragment.appendChild(container); // ⬅ 加入临时片段
+                        }
+                    }
+
+                };
+                console.error(rating);
+                progressContainer.style.display = 'none';
+
+                resultDiv.appendChild(tempFragment);
+            } catch (error) {
+                console.error("获取玩家所有成绩失败:", error);
+                alert("获取玩家所有成绩失败");
+            }
+
+        }
+
+        // <--查询歌曲-->
         function loadSong() {
             // 获取用户输入的歌曲ID
             const songId = document.getElementById("songIdInput").value;
@@ -296,6 +609,10 @@
                     }
                     return response.json();
                 }).then(data => {
+                    const versionMap = {
+                            //TODO
+                            };
+                            const versionM = versionMap[data.version] || '未知版本';
                     const songInfoHTML = `
                   <h3>歌曲信息</h3>
                   <p><strong>标题：</strong> ${data.title}</p>
@@ -304,8 +621,6 @@
                   <p><strong>BPM：</strong> ${data.bpm}</p>
                   <p><strong>所属区域：</strong> ${data.map ?? '无'}</p>
                   <p><strong>首次出现版本：</strong> ${data.version}</p>
-                  <p><strong>版权信息：</strong> ${data.rights ?? '无'}</p>
-                  <p><strong>是否禁用：</strong> ${data.disabled ? '是' : '否'}</p>
                 `;
                     songInfo.innerHTML = songInfoHTML;
                 })
@@ -314,6 +629,7 @@
                     songInfo.innerHTML = '<p style="color:red;">未找到该歌曲ID对应的信息</p>';
                 });
         }
+
     </script>
 </body>
 
