@@ -1,17 +1,80 @@
+/* 设置背景图和容器 */
 body {
-  background-image: url('../issue/TouchedImg_2359.jpg');/* 相对路径，往上跳一层再进入 issue 文件夹 */
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: contain;
-  width: 100vw;
-  height: 100vh;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  position: relative;
+  min-height: 100vh;
 }
-#TopLeftImage {
+
+/* 背景图层 */
+body::before {
+  content: "";
+  /* 必须设置 */
   position: fixed;
+  /* 让背景图保持固定 */
   top: 0;
   left: 0;
-  width: 150px !important;    /* 你想要的宽度 */
-  height: auto !important;    /* 高度自动，保持比例 */
-  margin: 0;
-  z-index: 9999;
+  right: 0;
+  bottom: 0;
+  z-index: -2;
+  /* 放到最底层 */
+
+  background-image: url('../issue/Maidxplus.jpg');
+  /* 背景图路径 */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-color: #4f8ef8;
+  /* 设置留白背景色 */
+  background-position: center center;
+  background-attachment: fixed;
+  /* 可选，让背景固定在视口，不随滚动移动 */
+  font-family: Arial, sans-serif;
+
+}
+
+/* 半透明遮罩层 */
+body::after {
+  content: "";
+  position: fixed;
+  /* 改为 fixed */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.5);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 左上角图标 */
+#TopLeftImage {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 100px;
+  height: auto;
+  z-index: 10;
+}
+
+/* 通用容器样式，使其居中 */
+.centered-section {
+  margin: 0 auto;
+  /* 水平居中 */
+  text-align: center;
+  /* 文字和按钮居中 */
+  max-width: 800px;
+  /* 可选，限制最大宽度 */
+  padding: 20px;
+  /* 可选，增加内边距避免贴边 */
+
+}
+
+
+#modeSelector,
+#apiQuerySection,
+#songQuerySection {
+  padding-top: 160px;
+  /* 根据图标高度留出足够空间 */
 }

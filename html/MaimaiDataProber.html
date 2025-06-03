@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 900px;
+            /* max-width: 900px; */
             margin: 0 auto;
             padding: 20px;
         }
@@ -16,14 +16,14 @@
             padding: 8px 16px;
             font-size: 16px;
             margin: 5px;
-            background-color: #4CAF50;
+            background-color: #4a47ff;
             color: white;
             border: none;
             cursor: pointer;
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #0400ff;
         }
 
         input {
@@ -32,15 +32,15 @@
             margin-bottom: 10px;
         }
 
-        pre {
-            background: #f5f5f5;
+        /* pre {
+            background: #ffffffbd;
             padding: 10px;
             white-space: pre-wrap;
-        }
+        } */
 
-        img {
+        /* img {
             margin-top: 10px;
-        }
+        } */
 
         #TopLeftImage {
             top: 0;
@@ -54,14 +54,14 @@
         }
     </style>
 
-    <!-- <link rel="stylesheet" href="../css/style.css"> -->
+    <link rel="stylesheet" href="../css/style.css">
 
 </head>
 
 <body>
     <img id="TopLeftImage" src="../issue/maimai_DX_2024.png" alt="左上角图片" />
     <!-- 模式选择界面 -->
-    <div id="modeSelector">
+    <div id="modeSelector" class="centered-section">
         <h2>请选择查询模式</h2>
         <button type="button" onclick="showMode('api')">API 查询</button>
         <button type="button" onclick="showMode('song')">查询单曲</button>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- API 查询功能区 -->
-    <div id="apiQuerySection" style="display: none;">
+    <div id="apiQuerySection" class="centered-section" style="display: none;">
         <button onclick="goHome()">返回主页</button>
         <h1>个人 API 查询工具</h1>
         <h2>输入你的 X-User-Token</h2>
@@ -98,13 +98,13 @@
     </div>
 
     <!-- 加载进度条 -->
-    <div id="progressBarContainer"
+    <div id="progressBarContainer" class="centered-section" 
         style="width: 100%; background: #eee; height: 20px; margin-bottom: 20px; display: none;">
-        <div id="progressBar" style="width: 0%; height: 100%; background: #4CAF50;"></div>
+        <div id="progressBar" style="width: 0%; height: 100%; background: #8133ff;"></div>
     </div>
 
     <!-- 单曲查询功能区 -->
-    <div id="songQuerySection" style="display: none;">
+    <div id="songQuerySection" class="centered-section" style="display: none;">
         <button onclick="goHome()">返回主页</button>
         <h1>单曲信息查询</h1>
         <input type="number" id="songIdInput" placeholder="输入歌曲ID" min="1">
@@ -169,13 +169,13 @@
                 const iconId = player.icon.id;
                 const plateId = player.name_plate.id;
                 const iconImg = iconId ? `<img src="https://assets2.lxns.net/maimai/icon/${iconId}.png" alt="头像" style="width:100px;margin-right:10px;">` : '';
-                const plateImg = plateId ? `<img src="https://assets2.lxns.net/maimai/plate/${plateId}.png" alt="姓名框" style="width:150px;">` : '';
+                const plateImg = plateId ? `<img src="https://assets2.lxns.net/maimai/plate/${plateId}.png" alt="姓名框" style="width:500px;">` : '';
 
                 const infoHTML = `
     <p><strong>头像:</strong></p>
-    <div style="display:flex;align-items:center;margin-bottom:10px;">${iconImg}</div>
+    <div style="text-align:center;margin-bottom:10px;">${iconImg}</div>
     <p><strong>头像框:</strong></p>
-    <div style="display:flex;align-items:center;margin-bottom:20px;">${plateImg}</div>
+    <div style="text-align:center;margin-bottom:10px;">${plateImg}</div>
     <p><strong>昵称:</strong> ${player.name}</p>
     <p><strong>DX Rating:</strong> ${player.rating}</p>
     <p><strong>称号:</strong> ${player.trophy?.name ?? '无'}</p>
@@ -186,6 +186,8 @@
             } catch (error) {
                 console.error("获取玩家数据失败:", error);
                 alert("获取玩家数据失败");
+                document.getElementById('paginationButtons').style.display = 'none';
+                document.getElementById('progressBarContainer').style.display = 'none';
             }
         }
 
@@ -195,10 +197,7 @@
 
         async function fetchPlayerAllScoreData() {
             isCancelled = true;
-            document.getElementById('paginationContainer').style.display = 'block';
-            const paginationDiv = document.getElementById('paginationButtons');
-            paginationDiv.style.display = 'block';  // 显示分页控件
-            document.getElementById('progressBarContainer').style.display = 'none';
+
 
             const token = document.getElementById('tokenInput').value.trim();
             if (!token) {
@@ -215,12 +214,18 @@
                     body: JSON.stringify({ token })
                 });
                 const data = await response.json();
+                document.getElementById('paginationContainer').style.display = 'block';
+                const paginationDiv = document.getElementById('paginationButtons');
+                paginationDiv.style.display = 'block';  // 显示分页控件
+                document.getElementById('progressBarContainer').style.display = 'none';
                 scores = data.data || [];
                 currentPage = 1;
                 renderPage(currentPage);
             } catch (error) {
                 console.error("获取玩家所有成绩失败:", error);
                 alert("获取玩家所有成绩失败");
+                document.getElementById('paginationButtons').style.display = 'none';
+                document.getElementById('progressBarContainer').style.display = 'none';
             }
         }
 
@@ -247,6 +252,7 @@
                 img.style.width = '200px';
                 img.style.height = '200px';
                 img.style.display = 'block';
+                img.style.margin = '0 auto';
                 
                 const levelMap = {
                     0: 'EASY',
@@ -325,12 +331,6 @@ ID：${score.id}
             document.getElementById('paginationContainer').style.display = 'none';
             document.getElementById('progressBarContainer').style.display = 'none';
 
-            const progressBar = document.getElementById("progressBar");
-            const progressContainer = document.getElementById("progressBarContainer");
-            progressBar.style.width = '0%';
-            progressContainer.style.display = 'block';
-
-
             const token = document.getElementById('tokenInput').value.trim();
             if (!token) {
                 alert('请先输入你的 API Token');
@@ -344,6 +344,12 @@ ID：${score.id}
                     body: JSON.stringify({ token })
                 });
                 const data = await response.json();
+
+                const progressBar = document.getElementById("progressBar");
+                const progressContainer = document.getElementById("progressBarContainer");
+                progressBar.style.width = '0%';
+                progressContainer.style.display = 'block';
+
                 const resultDiv = document.getElementById('resultData');
                 resultDiv.innerHTML = '';
 
@@ -414,6 +420,7 @@ ID：${score.id}
                             img.style.width = '200px';
                             img.style.height = '200px';
                             img.style.display = 'block';
+                            img.style.margin = '0 auto';
 
                             const levelMap = {
                                 0: 'EASY',
@@ -516,6 +523,7 @@ ID：${score.id}
                             img.style.width = '200px';
                             img.style.height = '200px';
                             img.style.display = 'block';
+                            img.style.margin = '0 auto';
 
                             const levelMap = {
                                 0: 'EASY',
@@ -610,9 +618,31 @@ ID：${score.id}
                     return response.json();
                 }).then(data => {
                     const versionMap = {
-                            //TODO
-                            };
-                            const versionM = versionMap[data.version] || '未知版本';
+                        '100': 'maimai',
+                        '110': 'maimai PLUS',
+                        '120': 'maimai GreeN',
+                        '130': 'maimai GreeN PLUS',
+                        '140': 'maimai ORANGE',
+                        '150': 'maimai ORANGE PLUS',
+                        '160': 'maimai PiNK',
+                        '170': 'maimai PiNK PLUS',
+                        '180': 'maimai MURASAKi',
+                        '185': 'maimai MURASAKi PLUS',
+                        '190': 'maimai MiLK',
+                        '195': 'maimai MiLK PLUS',
+                        '199': 'maimai FiNALE',
+                        '200': '舞萌DX',
+                        '201': '舞萌DX',
+                        '210': '舞萌DX 2021',
+                        '220': '舞萌DX 2022',
+                        '230': '舞萌DX 2023',
+                        '240': '舞萌DX 2024',
+                    };
+                    const versionStr = data.version.toString().padStart(5, '0');
+
+                    const versionCategoryCode = versionStr.slice(0, 3);
+
+                    const versionCN = versionMap[versionCategoryCode] || '未知版本';
                     const songInfoHTML = `
                   <h3>歌曲信息</h3>
                   <p><strong>标题：</strong> ${data.title}</p>
@@ -620,7 +650,7 @@ ID：${score.id}
                   <p><strong>分类：</strong> ${data.genre}</p>
                   <p><strong>BPM：</strong> ${data.bpm}</p>
                   <p><strong>所属区域：</strong> ${data.map ?? '无'}</p>
-                  <p><strong>首次出现版本：</strong> ${data.version}</p>
+                  <p><strong>首次出现版本：</strong> ${versionCN}</p>
                 `;
                     songInfo.innerHTML = songInfoHTML;
                 })
