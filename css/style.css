@@ -71,10 +71,19 @@ body::after {
 
 }
 
-
 #modeSelector,
 #apiQuerySection,
 #songQuerySection {
   padding-top: 160px;
   /* 根据图标高度留出足够空间 */
+}
+
+/* B50 两列布局样式 */
+.b50-container {
+  display: flex;
+  gap: 20px;
+}
+
+.b15-section, .b35-section {
+  flex: 1;
 }

@@ -26,6 +26,11 @@
             background-color: #0400ff;
         }
 
+        button.selected {
+            background-color: #0400ff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
         input {
             padding: 8px;
             font-size: 16px;
@@ -52,6 +57,15 @@
             margin: 0;
             z-index: 9999;
         }
+
+        .b50-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .b15-section, .b35-section {
+            flex: 1;
+        }
     </style>
 
     <link rel="stylesheet" href="../css/style.css">
@@ -76,9 +90,9 @@
         <input type="text" id="tokenInput" placeholder="请输入你的 API Token" style="width: 400px;">
 
         <h2>查询功能</h2>
-        <button onclick="fetchPlayerData()">查询玩家基本信息</button>
-        <button onclick="fetchPlayerB50Data()">查询玩家b50成绩</button>
-        <button onclick="fetchPlayerAllScoreData()">查询玩家所有成绩</button>
+        <button id="playerDataBtn" onclick="fetchPlayerData()">查询玩家基本信息</button>
+        <button id="b50DataBtn" onclick="fetchPlayerB50Data()">查询玩家b50成绩</button>
+        <button id="allScoresBtn" onclick="fetchPlayerAllScoreData()">查询玩家所有成绩</button>
 
 
         <h2>返回结果</h2>
@@ -86,12 +100,19 @@
 
         <div id="paginationContainer" style="display: none; margin-top: 20px;">
             <div id="paginationButtons"></div>
-            <label for="pageSizeSelect">每页显示条数：</label>
-            <select id="pageSizeSelect">
-                <option value="10">10 条</option>
-                <option value="20">20 条</option>
-                <option value="50">50 条</option>
-            </select>
+            <div style="margin: 10px 0;">
+                <label for="pageSizeSelect">每页显示条数：</label>
+                <select id="pageSizeSelect">
+                    <option value="10">10 条</option>
+                    <option value="20">20 条</option>
+                    <option value="50">50 条</option>
+                </select>
+                <span style="margin: 0 10px;">|</span>
+                <label for="pageInput">跳转到第</label>
+                <input type="number" id="pageInput" min="1" style="width: 60px; margin: 0 5px;">
+                <label for="pageInput">页</label>
+                <button onclick="goToPage()">跳转</button>
+            </div>
         </div>
 
 
@@ -111,12 +132,14 @@
         <button onclick="loadSong()">加载歌曲信息</button>
 
         <div id="songResult" style="margin-top: 20px;">
-            <h3>歌曲ID: <span id="displayId">-</span></h3>
-            <img id="jacket" src="" alt="曲绘" style="display: none; max-width: 200px;">
-            <audio id="audioPlayer" controls style="margin-top: 10px; display: none;">
-                您的浏览器不支持音频播放。
-            </audio>
-            <div id="songInfo" style="margin-top: 10px;"></div>
+            <h3 style="text-align: center;">歌曲ID: <span id="displayId">-</span></h3>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                <img id="jacket" src="" alt="曲绘" style="display: none; max-width: 200px;">
+                <audio id="audioPlayer" controls style="margin-top: 10px; display: none; width: 300px;">
+                    您的浏览器不支持音频播放。
+                </audio>
+            </div>
+            <div id="songInfo" style="margin-top: 20px;"></div>
         </div>
     </div>
 
@@ -140,8 +163,22 @@
             document.getElementById('progressBarContainer').style.display = 'none';
         }
 
+        // 添加按钮选中状态管理
+        function setSelectedButton(buttonId) {
+            // 移除所有按钮的选中状态
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(button => button.classList.remove('selected'));
+            
+            // 为选中的按钮添加选中状态
+            const selectedButton = document.getElementById(buttonId);
+            if (selectedButton) {
+                selectedButton.classList.add('selected');
+            }
+        }
+
         // <--查询个人数据-->
         async function fetchPlayerData() {
+            setSelectedButton('playerDataBtn');
             isCancelled = true;
             document.getElementById('resultData').innerHTML = '';
             document.getElementById('progressBarContainer').style.display = 'none';
@@ -172,14 +209,15 @@
                 const plateImg = plateId ? `<img src="https://assets2.lxns.net/maimai/plate/${plateId}.png" alt="姓名框" style="width:500px;">` : '';
 
                 const infoHTML = `
-    <p><strong>头像:</strong></p>
-    <div style="text-align:center;margin-bottom:10px;">${iconImg}</div>
-    <p><strong>头像框:</strong></p>
-    <div style="text-align:center;margin-bottom:10px;">${plateImg}</div>
-    <p><strong>昵称:</strong> ${player.name}</p>
-    <p><strong>DX Rating:</strong> ${player.rating}</p>
-    <p><strong>称号:</strong> ${player.trophy?.name ?? '无'}</p>
-`;
+    <div style="text-align: center;">
+        <p><strong>头像:</strong></p>
+        <div style="text-align:center;margin-bottom:10px;">${iconImg}</div>
+        <p><strong>头像框:</strong></p>
+        <div style="text-align:center;margin-bottom:10px;">${plateImg}</div>
+        <p><strong>昵称:</strong> ${player.name}</p>
+        <p><strong>DX Rating:</strong> ${player.rating}</p>
+        <p><strong>称号:</strong> ${player.trophy?.name ?? '无'}</p>
+    </div>`;
 
                 resultDiv.innerHTML = infoHTML;
 
@@ -196,6 +234,7 @@
         let currentPage = 1;     // 当前页
 
         async function fetchPlayerAllScoreData() {
+            setSelectedButton('allScoresBtn');
             isCancelled = true;
 
 
@@ -270,7 +309,7 @@ ID：${score.id}
 名称: ${score.song_name}
 难度：${difficulty}
 等级: ${score.level}
-分数: ${score.achievements}
+分数: ${score.achievements}%
 单曲分数: ${dxRating}
 类型: ${score.type}
 `;
@@ -315,17 +354,39 @@ ID：${score.id}
             pageInfo.textContent = ` 第 ${currentPage} / ${totalPages} 页 `;
             pageInfo.style.margin = '0 10px';
 
+            // 更新页码输入框的最大值
+            const pageInput = document.getElementById('pageInput');
+            pageInput.max = totalPages;
+            pageInput.value = currentPage;
+
             paginationDiv.appendChild(prevButton);
             paginationDiv.appendChild(pageInfo);
             paginationDiv.appendChild(nextButton);
         }
 
+        // 跳转到指定页
+        function goToPage() {
+            const pageInput = document.getElementById('pageInput');
+            const pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            const totalPages = Math.ceil(scores.length / pageSize);
+            const targetPage = parseInt(pageInput.value);
+
+            if (targetPage && targetPage >= 1 && targetPage <= totalPages) {
+                currentPage = targetPage;
+                renderPage(currentPage);
+            } else {
+                alert(`请输入有效的页码（1-${totalPages}）`);
+            }
+        }
+
         document.getElementById('pageSizeSelect').addEventListener('change', () => {
-            fetchPlayerAllScoreData(1); // 每页条数改变时重新加载第 1 页
+            currentPage = 1; // 重置到第一页
+            fetchPlayerAllScoreData(); // 每页条数改变时重新加载
         });
 
         // <--查询b50成绩-->
         async function fetchPlayerB50Data() {
+            setSelectedButton('b50DataBtn');
             isCancelled = false;
             document.getElementById('resultData').innerHTML = '';
             document.getElementById('paginationContainer').style.display = 'none';
@@ -356,11 +417,16 @@ ID：${score.id}
                 const tempFragment = document.createDocumentFragment(); // 临时容器
 
                 const scores = data.data;
-                let b15 = 0;
-                let b35 = 0;
                 let rating = 0;
                 let progress = 0;
-                // 获取b15
+
+                // 创建两列容器
+                const b50Container = document.createElement('div');
+                b50Container.className = 'b50-container';
+
+                // 创建 B15 部分
+                const b15Section = document.createElement('div');
+                b15Section.className = 'b15-section';
                 const b15Title = document.createElement('h2');
                 b15Title.textContent = 'B15';
                 b15Title.style.margin = '20px 0';
@@ -368,96 +434,11 @@ ID：${score.id}
                 b15Title.style.color = '#333';
                 b15Title.style.fontWeight = 'bold';
                 b15Title.style.fontFamily = 'Arial, sans-serif';
-                tempFragment.appendChild(b15Title);
+                b15Section.appendChild(b15Title);
 
-                for (const score of scores) {
-                    if (isCancelled) return;
-                    const container = document.createElement('div');
-                    container.style.marginBottom = '20px';
-
-                    const songId = score.id;
-                    const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
-
-                    let version;
-                    const maxRetries = 3;
-                    const retryDelay = 100;
-
-                    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                        try {
-                            const songResponse = await fetch(`http://localhost:3000/proxy/song/${songId}`);
-                            if (songResponse.ok) {
-                                const songData = await songResponse.json();
-                                if (songData.version !== undefined) {
-                                    version = songData.version;
-                                    break; // 获取成功，跳出循环
-                                } else {
-                                    console.warn(`歌曲 ${songId} 的 version 字段是 undefined（第 ${attempt} 次尝试）`);
-                                }
-                            } else {
-                                console.warn(`无法获取歌曲 ${songId} 信息，状态码: ${songResponse.status}（第 ${attempt} 次尝试）`);
-                            }
-                        } catch (e) {
-                            console.error(`获取歌曲 ${songId} 信息失败（第 ${attempt} 次尝试）:`, e);
-                        }
-
-                        if (attempt < maxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, retryDelay));
-                        }
-                    }
-
-
-                    if (version < 24000) {
-                        continue;
-                    }
-                    else {
-                        if (b15 >= 15) {
-                            break;
-                        }
-                        else {
-                            const img = document.createElement('img');
-                            img.src = songImageUrl;
-                            img.alt = '曲绘';
-                            img.style.width = '200px';
-                            img.style.height = '200px';
-                            img.style.display = 'block';
-                            img.style.margin = '0 auto';
-
-                            const levelMap = {
-                                0: 'EASY',
-                                1: 'ADVANCED',
-                                2: 'EXPERT',
-                                3: 'MASTER',
-                                4: 'RE:MASTER'
-                            };
-                            const difficulty = levelMap[score.level_index] || '未知难度';
-                            const dxRating = Math.floor(score.dx_rating);
-                            const scoreInfo = document.createElement('div');
-                            scoreInfo.textContent =
-                                `
-ID：${score.id}
-名称: ${score.song_name}
-难度：${difficulty}
-等级: ${score.level}
-分数: ${score.achievements}
-单曲分数: ${dxRating}
-类型: ${score.type}
-`;
-
-                            container.appendChild(img);
-                            container.appendChild(scoreInfo);
-                            //resultDiv.appendChild(container);
-                            b15 += 1;
-                            progress += 2;
-                            rating += dxRating;
-                            progressBar.style.width = `${progress}%`;
-
-                            tempFragment.appendChild(container); // ⬅ 加入临时片段
-                        }
-                    }
-
-                };
-
-                //获取b35
+                // 创建 B35 部分
+                const b35Section = document.createElement('div');
+                b35Section.className = 'b35-section';
                 const b35Title = document.createElement('h2');
                 b35Title.textContent = 'B35';
                 b35Title.style.margin = '20px 0';
@@ -465,100 +446,105 @@ ID：${score.id}
                 b35Title.style.color = '#333';
                 b35Title.style.fontWeight = 'bold';
                 b35Title.style.fontFamily = 'Arial, sans-serif';
-                tempFragment.appendChild(b35Title);
+                b35Section.appendChild(b35Title);
 
-                for (const score of scores) {
-                    if (isCancelled) return;
-                    const container = document.createElement('div');
-                    container.style.marginBottom = '20px';
+                // 处理成绩的函数
+                async function processScores(scores, count, versionThreshold, section) {
+                    let processed = 0;
+                    for (const score of scores) {
+                        if (isCancelled) return;
+                        const container = document.createElement('div');
+                        container.style.marginBottom = '20px';
 
-                    const songId = score.id;
-                    const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+                        const songId = score.id;
+                        const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
 
-                    let version;
-                    const maxRetries = 3;
-                    const retryDelay = 100;
+                        let version;
+                        const maxRetries = 3;
+                        const retryDelay = 100;
 
-                    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                        try {
-                            const songResponse = await fetch(`http://localhost:3000/proxy/song/${songId}`);
-                            if (songResponse.ok) {
-                                const songData = await songResponse.json();
-                                if (songData.version !== undefined) {
-                                    version = songData.version;
-                                    break; // 获取成功，跳出循环
+                        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                            try {
+                                const songResponse = await fetch(`http://localhost:3000/proxy/song/${songId}`);
+                                if (songResponse.ok) {
+                                    const songData = await songResponse.json();
+                                    if (songData.version !== undefined) {
+                                        version = songData.version;
+                                        break;
+                                    } else {
+                                        console.warn(`歌曲 ${songId} 的 version 字段是 undefined（第 ${attempt} 次尝试）`);
+                                    }
                                 } else {
-                                    console.warn(`歌曲 ${songId} 的 version 字段是 undefined（第 ${attempt} 次尝试）`);
+                                    console.warn(`无法获取歌曲 ${songId} 信息，状态码: ${songResponse.status}（第 ${attempt} 次尝试）`);
                                 }
-                            } else {
-                                console.warn(`无法获取歌曲 ${songId} 信息，状态码: ${songResponse.status}（第 ${attempt} 次尝试）`);
+                            } catch (e) {
+                                console.error(`获取歌曲 ${songId} 信息失败（第 ${attempt} 次尝试）:`, e);
                             }
-                        } catch (e) {
-                            console.error(`获取歌曲 ${songId} 信息失败（第 ${attempt} 次尝试）:`, e);
+
+                            if (attempt < maxRetries) {
+                                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                            }
                         }
 
-                        if (attempt < maxRetries) {
-                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        // 根据版本阈值判断是否处理该成绩
+                        if ((versionThreshold === 24000 && version < versionThreshold) ||
+                            (versionThreshold === 23999 && version >= versionThreshold)) {
+                            continue;
                         }
-                    }
 
-
-                    if (version >= 24000) {
-                        continue;
-                    }
-                    else {
-                        if (b35 >= 35) {
+                        if (processed >= count) {
                             break;
                         }
-                        else {
-                            const container = document.createElement('div');
-                            container.style.marginBottom = '20px';
 
-                            const songId = score.id;
-                            const songImageUrl = `https://assets2.lxns.net/maimai/jacket/${songId}.png`;
+                        const img = document.createElement('img');
+                        img.src = songImageUrl;
+                        img.alt = '曲绘';
+                        img.style.width = '200px';
+                        img.style.height = '200px';
+                        img.style.display = 'block';
+                        img.style.margin = '0 auto';
 
-                            const img = document.createElement('img');
-                            img.src = songImageUrl;
-                            img.alt = '曲绘';
-                            img.style.width = '200px';
-                            img.style.height = '200px';
-                            img.style.display = 'block';
-                            img.style.margin = '0 auto';
-
-                            const levelMap = {
-                                0: 'EASY',
-                                1: 'ADVANCED',
-                                2: 'EXPERT',
-                                3: 'MASTER',
-                                4: 'RE:MASTER'
-                            };
-                            const difficulty = levelMap[score.level_index] || '未知难度';
-                            const dxRating = Math.floor(score.dx_rating);
-                            const scoreInfo = document.createElement('div');
-                            scoreInfo.textContent =
-                                `
+                        const levelMap = {
+                            0: 'EASY',
+                            1: 'ADVANCED',
+                            2: 'EXPERT',
+                            3: 'MASTER',
+                            4: 'RE:MASTER'
+                        };
+                        const difficulty = levelMap[score.level_index] || '未知难度';
+                        const dxRating = Math.floor(score.dx_rating);
+                        const scoreInfo = document.createElement('div');
+                        scoreInfo.textContent =
+                            `
 ID：${score.id}
 名称: ${score.song_name}
 难度：${difficulty}
 等级: ${score.level}
-分数: ${score.achievements}
+分数: ${score.achievements}%
 单曲分数: ${dxRating}
 类型: ${score.type}
 `;
 
-                            container.appendChild(img);
-                            container.appendChild(scoreInfo);
-                            //resultDiv.appendChild(container);
-                            b35 += 1;
-                            progress += 2;
-                            rating += dxRating;
-                            progressBar.style.width = `${progress}%`;
-
-                            tempFragment.appendChild(container); // ⬅ 加入临时片段
-                        }
+                        container.appendChild(img);
+                        container.appendChild(scoreInfo);
+                        section.appendChild(container);
+                        processed += 1;
+                        progress += 2;
+                        rating += dxRating;
+                        progressBar.style.width = `${progress}%`;
                     }
+                }
 
-                };
+                // 处理 B15 (version >= 24000)
+                await processScores(scores, 15, 24000, b15Section);
+                // 处理 B35 (version < 24000)
+                await processScores(scores, 35, 23999, b35Section);
+
+                // 将两个部分添加到容器中
+                b50Container.appendChild(b15Section);
+                b50Container.appendChild(b35Section);
+                tempFragment.appendChild(b50Container);
+
                 console.error(rating);
                 progressContainer.style.display = 'none';
 
@@ -644,14 +630,15 @@ ID：${score.id}
 
                     const versionCN = versionMap[versionCategoryCode] || '未知版本';
                     const songInfoHTML = `
-                  <h3>歌曲信息</h3>
-                  <p><strong>标题：</strong> ${data.title}</p>
-                  <p><strong>艺术家：</strong> ${data.artist}</p>
-                  <p><strong>分类：</strong> ${data.genre}</p>
-                  <p><strong>BPM：</strong> ${data.bpm}</p>
-                  <p><strong>所属区域：</strong> ${data.map ?? '无'}</p>
-                  <p><strong>首次出现版本：</strong> ${versionCN}</p>
-                `;
+                  <div style="text-align: center;">
+                    <h3>歌曲信息</h3>
+                    <p><strong>标题：</strong> ${data.title}</p>
+                    <p><strong>艺术家：</strong> ${data.artist}</p>
+                    <p><strong>分类：</strong> ${data.genre}</p>
+                    <p><strong>BPM：</strong> ${data.bpm}</p>
+                    <p><strong>所属区域：</strong> ${data.map ?? '无'}</p>
+                    <p><strong>首次出现版本：</strong> ${versionCN}</p>
+                  </div>`;
                     songInfo.innerHTML = songInfoHTML;
                 })
                 .catch(error => {
